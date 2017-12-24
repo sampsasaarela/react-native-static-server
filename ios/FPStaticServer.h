@@ -2,6 +2,7 @@
 
 // GCDWebServer: https://github.com/swisspol/GCDWebServer
 #import "GCDWebServer.h"
+#import "GCDWebServerFileResponse.h"
 
 @interface FPStaticServer : NSObject <RCTBridgeModule> {
     GCDWebServer* _webServer;
@@ -16,4 +17,3 @@
     @property (assign) BOOL keep_alive;
 
 @end
-  
