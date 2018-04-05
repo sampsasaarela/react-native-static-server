@@ -68,8 +68,8 @@ RCT_EXPORT_METHOD(start: (NSString *)port
     self.localhost_only = localhost_only;
 
     if(_webServer.isRunning != NO) {
-        NSError *error = nil;
-        reject(@"server_error", @"StaticServer is already up", error);
+        NSLog(@"StaticServer already running at %@", self.url);
+        resolve(self.url);
         return;
     }
 
@@ -143,17 +143,21 @@ RCT_EXPORT_METHOD(start: (NSString *)port
 
     if (self.keep_alive == YES) {
         [options setObject:@(NO) forKey:GCDWebServerOption_AutomaticallySuspendInBackground];
+        [options setObject:@2.0 forKey:GCDWebServerOption_ConnectedStateCoalescingInterval];
     }
 
 
     if([_webServer startWithOptions:options error:&error]) {
         NSNumber *listenPort = [NSNumber numberWithUnsignedInteger:_webServer.port];
         self.port = listenPort;
-        self.url = [NSString stringWithFormat: @"%@://%@:%@", [_webServer.serverURL scheme], [_webServer.serverURL host], [_webServer.serverURL port]];
-        NSLog(@"Started StaticServer at URL %@", self.url);
 
-        resolve(self.url);
-
+        if(_webServer.serverURL == NULL) {
+            reject(@"server_error", @"StaticServer could not start", error);
+        } else {
+            self.url = [NSString stringWithFormat: @"%@://%@:%@", [_webServer.serverURL scheme], [_webServer.serverURL host], [_webServer.serverURL port]];
+            NSLog(@"Started StaticServer at URL %@", self.url);
+            resolve(self.url);
+        }
     } else {
         NSLog(@"Error starting StaticServer: %@", error);
 
@@ -172,5 +176,18 @@ RCT_EXPORT_METHOD(stop) {
     }
 }
 
+RCT_EXPORT_METHOD(origin:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject) {
+    if(_webServer.isRunning == YES) {
+        resolve(self.url);
+    } else {
+        resolve(@"");
+    }
+}
+
++ (BOOL)requiresMainQueueSetup
+{
+    return YES;
+}
 
 @end
